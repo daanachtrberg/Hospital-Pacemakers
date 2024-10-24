@@ -101,6 +101,9 @@ class Point(pygame.sprite.Sprite):
         self.image = pygame.Surface((8, 8))  # Point size
         self.image.fill(YELLOW)                 # Yellow color for points
         self.rect = self.image.get_rect()
+        self.respawn()
+
+    def respawn(self):
         self.rect.x = random.randint(0, SCREEN_WIDTH - 8)
         self.rect.y = random.randint(0, SCREEN_HEIGHT - 8)
 
@@ -241,6 +244,13 @@ def main():
 
             # Check for collisions with points
             collected_points = pygame.sprite.spritecollide(player, points, True)
+
+            # Respawn collected points
+            for _ in collected_points:
+                point = Point()
+                points.add(point)
+                all_sprites.add(point)
+
             score += len(collected_points)
 
             # Draw everything
