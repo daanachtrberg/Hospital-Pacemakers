@@ -25,6 +25,7 @@ RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 YELLOW = (255, 255, 0)
+HOVER_COLOR = (200, 200, 200)
 
 # Define the Player class
 class Player(pygame.sprite.Sprite):
@@ -123,18 +124,101 @@ def display_game_over():
     pygame.display.flip()
     pygame.time.wait(2000)  # Wait for 2 seconds before restarting
 
+def display_title_screen():
+    title_font = pygame.font.Font(None, 72)
+    start_font = pygame.font.Font(None, 48)
+
+    title_text = title_font.render("Game Title", True, WHITE)
+    start_text = start_font.render("Start Game", True, WHITE)
+
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+
+    title_animation_offset = 0
+    title_animation_direction = 1
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                return  # Exit the title screen
+
+        # Animate title text
+        title_animation_offset += title_animation_direction
+        if title_animation_offset > 10 or title_animation_offset < -10:
+            title_animation_direction *= -1
+
+        # Check for hover effect
+        mouse_pos = pygame.mouse.get_pos()
+        if start_rect.collidepoint(mouse_pos):
+            start_text = start_font.render("Start Game", True, HOVER_COLOR)
+        else:
+            start_text = start_font.render("Start Game", True, WHITE)
+
+        screen.blit(background_image, (0, 0))  # Draw the background image
+        screen.blit(title_text, (title_rect.x, title_rect.y + title_animation_offset))
+        screen.blit(start_text, start_rect)
+        pygame.display.update()
+        clock.tick(FPS)
+
+def draw_scoreboard(score):
+    font = pygame.font.Font(None, 36)  # Create a font object for the scoreboard
+    score_text = font.render(f"Score: {score}", True, WHITE)  # Render the score text
+    screen.blit(score_text, (10, 10))  # Draw the score text at the top-left corner
+
+def display_title_screen():
+    title_font = pygame.font.Font(None, 72)
+    start_font = pygame.font.Font(None, 48)
+
+    title_text = title_font.render("Game Title", True, WHITE)
+    start_text = start_font.render("Start Game", True, WHITE)
+
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
+    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+
+    title_animation_offset = 0
+    title_animation_direction = 1
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                return  # Exit the title screen
+
+        # Animate title text
+        title_animation_offset += title_animation_direction
+        if title_animation_offset > 10 or title_animation_offset < -10:
+            title_animation_direction *= -1
+
+        # Check for hover effect
+        mouse_pos = pygame.mouse.get_pos()
+        if start_rect.collidepoint(mouse_pos):
+            start_text = start_font.render("Start Game", True, HOVER_COLOR)
+        else:
+            start_text = start_font.render("Start Game", True, WHITE)
+
+        screen.blit(background_image, (0, 0))  # Draw the background image
+        screen.blit(title_text, (title_rect.x, title_rect.y + title_animation_offset))
+        screen.blit(start_text, start_rect)
+        pygame.display.update()
+        clock.tick(FPS)
+
 # Main game loop
 def main():
     walls = [
         pygame.Rect(30, 240, 10, 170),  # Wall 1
-        pygame.Rect(30, 240, 50, 10),  # Wall 2
-        pygame.Rect(140, 240, 130, 10),           # Wall 3 (Horizontal)
-        pygame.Rect(190, 240, 10, 150),  # Wall 1
-        pygame.Rect(700, 0, 10, 200),  # Wall 2
-        pygame.Rect(500, 300, 200, 10),           # Wall 3 (Horizontal)
-        pygame.Rect(300, 0, 10, 200),  # Wall 1
-        pygame.Rect(700, 0, 10, 200),  # Wall 2
-        pygame.Rect(500, 300, 200, 10),           # Wall 3 (Horizontal)
+        pygame.Rect(30, 240, 50, 10),   # Wall 2
+        pygame.Rect(140, 240, 130, 10), # Wall 3 (Horizontal)
+        pygame.Rect(190, 240, 10, 150), # Wall 4
+        pygame.Rect(700, 0, 10, 200),   # Wall 5
+        pygame.Rect(500, 300, 200, 10), # Wall 6 (Horizontal)
+        pygame.Rect(300, 0, 10, 200),   # Wall 7
+        pygame.Rect(700, 0, 10, 200),   # Wall 8
+        pygame.Rect(500, 300, 200, 10), # Wall 9 (Horizontal)
     ]
 
     enemies = pygame.sprite.Group()
@@ -149,6 +233,8 @@ def main():
     # Create points
     points = pygame.sprite.Group()
     total_points_collected = 0
+
+    display_title_screen()
 
     # Main game loop
     while True:
@@ -182,9 +268,16 @@ def main():
             new_point = Point()
             points.add(new_point)
 
+        # Check for collisions with points
+        collected_points = pygame.sprite.spritecollide(player, points, True)  # True to remove the collected points
+        total_points_collected += len(collected_points)  # Update the score
+
         # Draw points
         for point in points:
             screen.blit(point.image, point.rect)
+
+        # Draw the scoreboard
+        draw_scoreboard(total_points_collected)  # Call the scoreboard drawing function
 
         # Update the display
         pygame.display.flip()
@@ -193,3 +286,5 @@ def main():
 # Run the game
 if __name__ == "__main__":
     main()
+
+
