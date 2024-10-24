@@ -210,15 +210,28 @@ def display_title_screen():
 # Main game loop
 def main():
     walls = [
-        pygame.Rect(30, 240, 10, 170),  # Wall 1
-        pygame.Rect(30, 240, 50, 10),   # Wall 2
-        pygame.Rect(140, 240, 130, 10), # Wall 3 (Horizontal)
-        pygame.Rect(190, 240, 10, 150), # Wall 4
-        pygame.Rect(700, 0, 10, 200),   # Wall 5
-        pygame.Rect(500, 300, 200, 10), # Wall 6 (Horizontal)
-        pygame.Rect(300, 0, 10, 200),   # Wall 7
-        pygame.Rect(700, 0, 10, 200),   # Wall 8
-        pygame.Rect(500, 300, 200, 10), # Wall 9 (Horizontal)
+        pygame.Rect(340, 245, 230, 10),  # Wall 1
+        pygame.Rect(620, 245, 90, 10),   # Wall 2
+        pygame.Rect(680, 245, 7, 95), # Wall 3 (Horizontal)
+        pygame.Rect(680, 340, 50, 4), # Wall 4
+        pygame.Rect(650, 330, 35, 4),   # Wall 5
+        pygame.Rect(565, 330, 30, 4), # Wall 6 (Horizontal)
+        pygame.Rect(959, 245, 10, 175),   # Wall 2
+        pygame.Rect(760, 245, 200, 10), # Wall 3 (Horizontal)
+        pygame.Rect(810, 340, 5, 80), # Wall 4
+        pygame.Rect(780, 340, 180, 5), # Wall 6 (Horizontal)
+        pygame.Rect(810, 460, 5, 30), # Wall 4
+        pygame.Rect(959, 458, 10, 34), # Wall 4
+        pygame.Rect(540, 483, 420, 10),
+        pygame.Rect(30, 240, 10, 170),
+        pygame.Rect(560, 330, 10, 160),
+        pygame.Rect(30, 240, 50, 10),
+        pygame.Rect(135, 243, 130, 10),
+        pygame.Rect(190, 240, 10, 150),
+        pygame.Rect(30, 480, 438, 10),
+        pygame.Rect(30, 460, 10, 30),
+        pygame.Rect(30, 365, 60, 10),
+        pygame.Rect(140, 365, 60, 10)
     ]
 
     enemies = pygame.sprite.Group()
@@ -247,8 +260,8 @@ def main():
         screen.blit(background_image, (0, 0))  # Use the background image
 
         # Draw all walls
-        for wall in walls:
-            pygame.draw.rect(screen, WHITE, wall)  # Draw all walls
+        # for wall in walls:
+        #     pygame.draw.rect(screen, WHITE, wall)  # Draw all walls
 
         # Update and draw player and enemies
         keys = pygame.key.get_pressed()
