@@ -5,10 +5,14 @@ import random
 # Initialize Pygame
 pygame.init()
 
-# Set up screen dimensions (800x600)
-SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+# Set up screen dimensions (1600x1200)
+SCREEN_WIDTH, SCREEN_HEIGHT = 1600, 1200
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Top-Down Game with Moving Enemies and Points")
+
+# Load background image
+background_image = pygame.image.load("Map.png")  # Replace with your image file
+background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))  # Scale to fit the screen
 
 # Set frame rate
 clock = pygame.time.Clock()
@@ -146,8 +150,8 @@ def main():
         score += len(collected_points)  # Increase score by the number of collected points
         total_points_collected += len(collected_points)  # Update total points collected
 
-        # Fill the screen with a black background
-        screen.fill(BLACK)
+        # Fill the screen with the background image
+        screen.blit(background_image, (0, 0))  # Draw the background image
 
         # Draw all sprites (player, enemies, and points)
         all_sprites.draw(screen)
@@ -177,4 +181,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
