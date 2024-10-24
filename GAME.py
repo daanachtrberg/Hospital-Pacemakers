@@ -11,7 +11,6 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Top-Down Game with Moving Enemies and Points")
 
 # Load background image (make sure to have the correct path)
-# Replace with your image file
 background_image = pygame.image.load("Map.png")  
 background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))  # Scale to fit the screen
 
@@ -35,7 +34,7 @@ class Player(pygame.sprite.Sprite):
         self.image.fill(BLUE)                  # Blue color for the player
         self.rect = self.image.get_rect()
         self.rect.center = (spawn_x, spawn_y)  # Set the spawn position
-        self.speed = 5
+        self.speed = 7
 
     def update(self, keys, walls):
         # Store the original position
@@ -69,10 +68,10 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, SCREEN_WIDTH - 30)
         self.rect.y = random.randint(0, SCREEN_HEIGHT - 30)
-        self.speed = random.uniform(0.5, 1.5)     # Slower random speed for movement
+        self.speed = random.uniform(3, 4)   # Slower random speed for movement
         self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]  # Random initial direction
 
-    def update(self, walls):
+    def update(self, walls):  # Only one argument
         # Save the original position
         original_rect = self.rect.copy()
 
@@ -166,46 +165,7 @@ def display_title_screen():
 def draw_scoreboard(score):
     font = pygame.font.Font(None, 36)  # Create a font object for the scoreboard
     score_text = font.render(f"Score: {score}", True, WHITE)  # Render the score text
-    screen.blit(score_text, (10, 10))  # Draw the score text at the top-left corner
-
-def display_title_screen():
-    title_font = pygame.font.Font(None, 72)
-    start_font = pygame.font.Font(None, 48)
-
-    title_text = title_font.render("Game Title", True, WHITE)
-    start_text = start_font.render("Start Game", True, WHITE)
-
-    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
-    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-
-    title_animation_offset = 0
-    title_animation_direction = 1
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                return  # Exit the title screen
-
-        # Animate title text
-        title_animation_offset += title_animation_direction
-        if title_animation_offset > 10 or title_animation_offset < -10:
-            title_animation_direction *= -1
-
-        # Check for hover effect
-        mouse_pos = pygame.mouse.get_pos()
-        if start_rect.collidepoint(mouse_pos):
-            start_text = start_font.render("Start Game", True, HOVER_COLOR)
-        else:
-            start_text = start_font.render("Start Game", True, WHITE)
-
-        screen.blit(background_image, (0, 0))  # Draw the background image
-        screen.blit(title_text, (title_rect.x, title_rect.y + title_animation_offset))
-        screen.blit(start_text, start_rect)
-        pygame.display.update()
-        clock.tick(FPS)
+    screen.blit(score_text, (10, 10))  # Draw the score at the top left corner
 
 # Main game loop
 def main():
@@ -234,70 +194,68 @@ def main():
         pygame.Rect(140, 365, 60, 10)
     ]
 
+    # Create sprite groups
+    global all_sprites, enemies, points
+    all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
-    for i in range(5):  # Create 5 enemies
+    points = pygame.sprite.Group()
+
+    # Create player
+    spawn_x, spawn_y = find_spawn_point(enemies, walls)  # Find a suitable spawn point
+    player = Player(spawn_x, spawn_y)
+    all_sprites.add(player)
+
+    # Create enemies
+    for _ in range(5):  # Create 5 enemies
         enemy = Enemy()
         enemies.add(enemy)
-
-    # Find a spawn point for the player
-    spawn_x, spawn_y = find_spawn_point(enemies, walls)
-    player = Player(spawn_x, spawn_y)
+        all_sprites.add(enemy)
 
     # Create points
-    points = pygame.sprite.Group()
-    total_points_collected = 0
+    for _ in range(10):  # Create 10 points
+        point = Point()
+        points.add(point)
+        all_sprites.add(point)
 
-    display_title_screen()
+    score = 0
+    game_over = False
 
-    # Main game loop
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-        # Clear the screen
-        screen.blit(background_image, (0, 0))  # Use the background image
+        if not game_over:
+            keys = pygame.key.get_pressed()
+            player.update(keys, walls)  # Update the player
 
-        # Draw all walls
-        # for wall in walls:
-        #     pygame.draw.rect(screen, WHITE, wall)  # Draw all walls
+            # Update each enemy
+            for enemy in enemies:
+                enemy.update(walls)  # Only one argument passed here
 
-        # Update and draw player and enemies
-        keys = pygame.key.get_pressed()
-        player.update(keys, walls)
-        screen.blit(player.image, player.rect)
+            # Check for collisions with enemies
+            if pygame.sprite.spritecollideany(player, enemies):
+                print("Collision with enemy!")  # Debugging output
+                game_over = True
 
-        enemies.update(walls)
-        enemies.draw(screen)
+            # Check for collisions with points
+            collected_points = pygame.sprite.spritecollide(player, points, True)
+            score += len(collected_points)
 
-        # Check for collisions with enemies
-        if pygame.sprite.spritecollideany(player, enemies):
+            # Draw everything
+            screen.blit(background_image, (0, 0))  # Draw the background image
+            all_sprites.draw(screen)
+            draw_scoreboard(score)
+
+        else:
             display_game_over()
-            main()  # Restart the game after death
+            return  # Return to title screen to start over
 
-        # Check for points collection
-        if len(points) < 10:  # Limit the number of points to 10
-            new_point = Point()
-            points.add(new_point)
-
-        # Check for collisions with points
-        collected_points = pygame.sprite.spritecollide(player, points, True)  # True to remove the collected points
-        total_points_collected += len(collected_points)  # Update the score
-
-        # Draw points
-        for point in points:
-            screen.blit(point.image, point.rect)
-
-        # Draw the scoreboard
-        draw_scoreboard(total_points_collected)  # Call the scoreboard drawing function
-
-        # Update the display
-        pygame.display.flip()
+        pygame.display.update()
         clock.tick(FPS)
 
-# Run the game
-if __name__ == "__main__":
-    main()
-
-
+# Game loop starts here
+while True:
+    display_title_screen()  # Show title screen
+    main()  # Start the game
