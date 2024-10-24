@@ -5,13 +5,14 @@ import random
 # Initialize Pygame
 pygame.init()
 
-# Set up screen dimensions (1600x1200)
-SCREEN_WIDTH, SCREEN_HEIGHT = 1600, 1200
+# Set up screen dimensions (1000x800)
+SCREEN_WIDTH, SCREEN_HEIGHT = 1000, 800
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Top-Down Game with Moving Enemies and Points")
 
-# Load background image
-background_image = pygame.image.load("Map.png")  # Replace with your image file
+# Load background image (make sure to have the correct path)
+# Replace with your image file
+background_image = pygame.image.load("Map.png")  
 background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))  # Scale to fit the screen
 
 # Set frame rate
@@ -29,13 +30,17 @@ YELLOW = (255, 255, 0)
 class Player(pygame.sprite.Sprite):
     def __init__(self, spawn_x, spawn_y):
         super().__init__()
-        self.image = pygame.Surface((50, 50))  # Player's size
+        self.image = pygame.Surface((30, 30))  # Player's size
         self.image.fill(BLUE)                  # Blue color for the player
         self.rect = self.image.get_rect()
         self.rect.center = (spawn_x, spawn_y)  # Set the spawn position
         self.speed = 5
 
-    def update(self, keys):
+    def update(self, keys, walls):
+        # Store the original position
+        original_rect = self.rect.copy()
+
+        # Move the player based on key presses
         if keys[pygame.K_LEFT]:
             self.rect.x -= self.speed
         if keys[pygame.K_RIGHT]:
@@ -48,50 +53,65 @@ class Player(pygame.sprite.Sprite):
         # Prevent moving off the screen
         self.rect.clamp_ip(screen.get_rect())  # Clamp the player's rect within the screen boundaries
 
+        # Prevent moving through walls
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                self.rect = original_rect  # Revert to original position if collision occurs
+                break  # Exit the loop if a collision is detected
+
 # Define an Enemy class
 class Enemy(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((50, 50))  # Enemy size
+        self.image = pygame.Surface((30, 30))  # Enemy size
         self.image.fill(RED)                    # Red color for enemies
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, SCREEN_WIDTH - 50)
-        self.rect.y = random.randint(0, SCREEN_HEIGHT - 50)
-        self.speed = random.uniform(0.5, 2)     # Slower random speed for movement
+        self.rect.x = random.randint(0, SCREEN_WIDTH - 30)
+        self.rect.y = random.randint(0, SCREEN_HEIGHT - 30)
+        self.speed = random.uniform(0.5, 1.5)     # Slower random speed for movement
         self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]  # Random initial direction
 
-    def update(self):
+    def update(self, walls):
+        # Save the original position
+        original_rect = self.rect.copy()
+
         # Move the enemy in both x and y directions
         self.rect.x += self.speed * self.direction[0]
         self.rect.y += self.speed * self.direction[1]
 
+        # Check for collision with all walls
+        for wall in walls:
+            if self.rect.colliderect(wall):
+                self.rect = original_rect  # Revert to original position
+                self.direction[0] *= -1  # Reverse direction on x-axis
+                self.direction[1] *= -1  # Reverse direction on y-axis
+                break  # Exit the loop if a collision is detected
+
         # Reverse direction if enemy hits the screen edge
         if self.rect.left < 0 or self.rect.right > SCREEN_WIDTH:
             self.direction[0] *= -1  # Reverse horizontal direction
-            self.rect.x += self.speed * self.direction[0]  # Adjust position to stay in bounds
 
         if self.rect.top < 0 or self.rect.bottom > SCREEN_HEIGHT:
             self.direction[1] *= -1  # Reverse vertical direction
-            self.rect.y += self.speed * self.direction[1]  # Adjust position to stay in bounds
 
 # Define a Point class for collectibles
 class Point(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((10, 10))  # Point size
+        self.image = pygame.Surface((8, 8))  # Point size
         self.image.fill(YELLOW)                 # Yellow color for points
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, SCREEN_WIDTH - 10)
-        self.rect.y = random.randint(0, SCREEN_HEIGHT - 10)
+        self.rect.x = random.randint(0, SCREEN_WIDTH - 8)
+        self.rect.y = random.randint(0, SCREEN_HEIGHT - 8)
 
 # Function to find a spawn point for the player
-def find_spawn_point(enemies):
+def find_spawn_point(enemies, walls):
     while True:
-        spawn_x = random.randint(0, SCREEN_WIDTH - 50)
-        spawn_y = random.randint(0, SCREEN_HEIGHT - 50)
-        player_rect = pygame.Rect(spawn_x, spawn_y, 50, 50)  # Player's hitbox
-        # Check if the spawn point collides with any enemy
-        if not any(player_rect.colliderect(enemy.rect) for enemy in enemies):
+        spawn_x = random.randint(0, SCREEN_WIDTH - 30)
+        spawn_y = random.randint(0, SCREEN_HEIGHT - 30)
+        player_rect = pygame.Rect(spawn_x, spawn_y, 30, 30)  # Player's hitbox
+        # Check if the spawn point collides with any enemy or walls
+        if not any(player_rect.colliderect(enemy.rect) for enemy in enemies) and not any(player_rect.colliderect(wall) for wall in walls):
             return spawn_x, spawn_y
 
 # Function to display the "You died" message
@@ -105,79 +125,71 @@ def display_game_over():
 
 # Main game loop
 def main():
+    walls = [
+        pygame.Rect(30, 240, 10, 170),  # Wall 1
+        pygame.Rect(30, 240, 50, 10),  # Wall 2
+        pygame.Rect(140, 240, 130, 10),           # Wall 3 (Horizontal)
+        pygame.Rect(190, 240, 10, 150),  # Wall 1
+        pygame.Rect(700, 0, 10, 200),  # Wall 2
+        pygame.Rect(500, 300, 200, 10),           # Wall 3 (Horizontal)
+        pygame.Rect(300, 0, 10, 200),  # Wall 1
+        pygame.Rect(700, 0, 10, 200),  # Wall 2
+        pygame.Rect(500, 300, 200, 10),           # Wall 3 (Horizontal)
+    ]
+
     enemies = pygame.sprite.Group()
     for i in range(5):  # Create 5 enemies
         enemy = Enemy()
         enemies.add(enemy)
 
     # Find a spawn point for the player
-    spawn_x, spawn_y = find_spawn_point(enemies)
+    spawn_x, spawn_y = find_spawn_point(enemies, walls)
     player = Player(spawn_x, spawn_y)
 
     # Create points
     points = pygame.sprite.Group()
-    total_points_collected = 0  # Total points collected
-    spawn_timer = 0  # Timer for point respawn
+    total_points_collected = 0
 
-    all_sprites = pygame.sprite.Group()
-    all_sprites.add(player)
-
-    score = 0  # Initialize score
-    font = pygame.font.Font(None, 36)  # Font for displaying score
-
-    running = True
-    while running:
-        # Handle events
+    # Main game loop
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
+                sys.exit()
 
-        # Get keys pressed
+        # Clear the screen
+        screen.blit(background_image, (0, 0))  # Use the background image
+
+        # Draw all walls
+        for wall in walls:
+            pygame.draw.rect(screen, WHITE, wall)  # Draw all walls
+
+        # Update and draw player and enemies
         keys = pygame.key.get_pressed()
+        player.update(keys, walls)
+        screen.blit(player.image, player.rect)
 
-        # Update the player and enemies
-        player.update(keys)
-        enemies.update()
+        enemies.update(walls)
+        enemies.draw(screen)
 
         # Check for collisions with enemies
         if pygame.sprite.spritecollideany(player, enemies):
-            display_game_over()  # Show game over message
-            spawn_x, spawn_y = find_spawn_point(enemies)  # Find a new spawn point
-            player.rect.center = (spawn_x, spawn_y)  # Reset player position
+            display_game_over()
+            main()  # Restart the game after death
 
-        # Check for collisions with points
-        collected_points = pygame.sprite.spritecollide(player, points, True)  # Collect points and remove them
-        score += len(collected_points)  # Increase score by the number of collected points
-        total_points_collected += len(collected_points)  # Update total points collected
+        # Check for points collection
+        if len(points) < 10:  # Limit the number of points to 10
+            new_point = Point()
+            points.add(new_point)
 
-        # Fill the screen with the background image
-        screen.blit(background_image, (0, 0))  # Draw the background image
-
-        # Draw all sprites (player, enemies, and points)
-        all_sprites.draw(screen)
-        enemies.draw(screen)
-        points.draw(screen)
-
-        # Respawn points at a normal pace
-        spawn_timer += 1
-        if spawn_timer > 60:  # Respawn every 60 frames (1 second)
-            if len(points) < 10:  # Limit to 10 points on the screen at once
-                point = Point()
-                points.add(point)
-            spawn_timer = 0  # Reset spawn timer
-
-        # Display the score and total points collected
-        score_text = font.render(f"Score: {score}", True, WHITE)
-        total_points_text = font.render(f"Total Points: {total_points_collected}", True, WHITE)
-        screen.blit(score_text, (10, 10))  # Display score at the top left
-        screen.blit(total_points_text, (10, 50))  # Display total points below the score
+        # Draw points
+        for point in points:
+            screen.blit(point.image, point.rect)
 
         # Update the display
-        pygame.display.update()
+        pygame.display.flip()
         clock.tick(FPS)
 
-    pygame.quit()
-    sys.exit()
-
+# Run the game
 if __name__ == "__main__":
     main()
