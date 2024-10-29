@@ -208,30 +208,27 @@ def display_title_screen():
         pygame.display.update()
         clock.tick(FPS)
 
-
-
 def draw_scoreboard(score, npc_interactions):
     font = pygame.font.Font(None, 36)
-    score_text = font.render(f"Screws: {score}", True, WHITE)
-    npc_text = font.render(f"Patients Saved: {npc_interactions}", True, WHITE)
+    score_text = font.render(f"Score: {score}", True, YELLOW)
+    interactions_text = font.render(f"NPC Interactions: {npc_interactions}", True, YELLOW)
     screen.blit(score_text, (10, 10))
-    screen.blit(npc_text, (10, 40))
+    screen.blit(interactions_text, (10, 40))
 
-# Main game loop
 def main():
     walls = [
-        pygame.Rect(340, 245, 230, 10),  # Wall 1
-        pygame.Rect(620, 245, 90, 10),   # Wall 2
-        pygame.Rect(680, 245, 7, 95), # Wall 3 (Horizontal)
-        pygame.Rect(680, 340, 50, 4), # Wall 4
-        pygame.Rect(650, 330, 35, 4),   # Wall 5
-        pygame.Rect(565, 330, 30, 4), # Wall 6 (Horizontal)
-        pygame.Rect(959, 245, 10, 170),   # Wall 2
-        pygame.Rect(770, 245, 190, 10), # Wall 3 (Horizontal)
-        pygame.Rect(810, 340, 5, 75), # Wall 4
-        pygame.Rect(780, 340, 180, 5), # Wall 6 (Horizontal)
-        pygame.Rect(810, 465, 5, 25), # Wall 4
-        pygame.Rect(959, 463, 10, 29), # Wall 4
+        pygame.Rect(340, 245, 230, 10),  
+        pygame.Rect(620, 245, 90, 10),   
+        pygame.Rect(680, 245, 7, 95), 
+        pygame.Rect(680, 340, 50, 4), 
+        pygame.Rect(650, 330, 35, 4),   
+        pygame.Rect(565, 330, 30, 4), 
+        pygame.Rect(959, 245, 10, 170),   
+        pygame.Rect(770, 245, 190, 10), 
+        pygame.Rect(810, 340, 5, 75), 
+        pygame.Rect(780, 340, 180, 5), 
+        pygame.Rect(810, 465, 5, 25), 
+        pygame.Rect(959, 463, 10, 29), 
         pygame.Rect(540, 483, 420, 10),
         pygame.Rect(30, 240, 10, 165),
         pygame.Rect(560, 330, 10, 160),
@@ -253,11 +250,11 @@ def main():
     player = Player(spawn_x, spawn_y)
     all_sprites.add(player)
 
-    for _ in range(5):
-        enemy_spawn_x, enemy_spawn_y = find_enemy_spawn_point(enemies, walls)
-        enemy = Enemy(enemy_spawn_x, enemy_spawn_y)
-        enemies.add(enemy)
-        all_sprites.add(enemy)
+    # Start with one enemy
+    enemy_spawn_x, enemy_spawn_y = find_enemy_spawn_point(enemies, walls)
+    enemy = Enemy(enemy_spawn_x, enemy_spawn_y)
+    enemies.add(enemy)
+    all_sprites.add(enemy)
 
     for _ in range(10):
         point = Point()
@@ -324,6 +321,12 @@ def main():
                 neutral_npc.respawn(walls)
                 score -= 3
                 npc_interactions += 1  # Increment the NPC interactions counter
+                
+                # Add a new enemy each time an NPC is interacted with
+                enemy_spawn_x, enemy_spawn_y = find_enemy_spawn_point(enemies, walls)
+                new_enemy = Enemy(enemy_spawn_x, enemy_spawn_y)
+                enemies.add(new_enemy)
+                all_sprites.add(new_enemy)
 
             screen.blit(background_image, (0, 0))
             all_sprites.draw(screen)
@@ -336,5 +339,13 @@ def main():
         pygame.display.update()
         clock.tick(FPS)
 
-display_title_screen()
-main()
+
+        if game_over:
+            display_game_over()
+            break
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    display_title_screen()
+    main()
