@@ -20,6 +20,7 @@ FPS = 60
 
 # Colors (RGB values)
 BLUE = (0, 128, 255)
+SKYBLUE = (135, 206, 235)
 RED = (255, 0, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -57,13 +58,13 @@ class Player(pygame.sprite.Sprite):
 
 # Define an Enemy class
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, spawn_x, spawn_y):
         super().__init__()
         self.image = pygame.Surface((30, 30))
         self.image.fill(RED)
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, SCREEN_WIDTH - 30)
-        self.rect.y = random.randint(0, SCREEN_HEIGHT - 30)
+        self.rect.x = spawn_x
+        self.rect.y = spawn_y
         self.speed = random.uniform(3, 4)
         self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]
 
@@ -131,12 +132,28 @@ def find_spawn_point(enemies, walls):
         spawn_x = random.randint(0, SCREEN_WIDTH - 30)
         spawn_y = random.randint(0, SCREEN_HEIGHT - 30)
         player_rect = pygame.Rect(spawn_x, spawn_y, 30, 30)
-        if not any(player_rect.colliderect(enemy.rect) for enemy in enemies) and not any(player_rect.colliderect(wall) for wall in walls):
+
+        # Ensure the spawn point is not too close to walls or enemies
+        if (not any(player_rect.colliderect(enemy.rect) for enemy in enemies) and
+            not any(player_rect.colliderect(wall) for wall in walls) and
+            all(not wall.colliderect(player_rect.inflate(30, 30)) for wall in walls)):  # Check if player is far enough from walls
+            return spawn_x, spawn_y
+
+def find_enemy_spawn_point(enemies, walls):
+    while True:
+        spawn_x = random.randint(0, SCREEN_WIDTH - 30)
+        spawn_y = random.randint(0, SCREEN_HEIGHT - 30)
+        enemy_rect = pygame.Rect(spawn_x, spawn_y, 30, 30)
+
+        # Ensure the spawn point is not too close to walls or other enemies
+        if (not any(enemy_rect.colliderect(other_enemy.rect) for other_enemy in enemies) and
+            not any(enemy_rect.colliderect(wall) for wall in walls) and
+            all(not wall.colliderect(enemy_rect.inflate(30, 30)) for wall in walls)):  # Check if enemy is far enough from walls
             return spawn_x, spawn_y
 
 def display_game_over():
     font = pygame.font.Font(None, 74)
-    text = font.render("You Died", True, WHITE)
+    text = font.render("GAME OVER", True, RED)
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(text, text_rect)
     pygame.display.flip()
@@ -145,12 +162,21 @@ def display_game_over():
 def display_title_screen():
     title_font = pygame.font.Font(None, 72)
     start_font = pygame.font.Font(None, 48)
-    title_text = title_font.render("Game Title", True, WHITE)
+    subtitle_font = pygame.font.Font(None, 36)  # Font for the subtitle
+
+    title_text = title_font.render("Pacemaker Panic", True, BLUE)
     start_text = start_font.render("Start Game", True, WHITE)
+    subtitle_text = subtitle_font.render("Collect 3 screws and save the patients before they flatline!", True, SKYBLUE)  # Subtitle text
+
     title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 3))
-    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    start_rect = start_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))  # Positioning the start text
+    subtitle_rect = subtitle_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))  # Positioning the subtitle above the start text
+
     title_animation_offset = 0
     title_animation_direction = 1
+    subtitle_animation_offset = 0
+    subtitle_animation_direction = 1
+
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -158,53 +184,66 @@ def display_title_screen():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 return
+
         title_animation_offset += title_animation_direction
+        subtitle_animation_offset += subtitle_animation_direction
+
         if title_animation_offset > 10 or title_animation_offset < -10:
             title_animation_direction *= -1
+
+        if subtitle_animation_offset > 5 or subtitle_animation_offset < -5:  # Adjust subtitle animation limits
+            subtitle_animation_direction *= -1
+
         mouse_pos = pygame.mouse.get_pos()
         if start_rect.collidepoint(mouse_pos):
             start_text = start_font.render("Start Game", True, HOVER_COLOR)
         else:
             start_text = start_font.render("Start Game", True, WHITE)
+
         screen.blit(background_image, (0, 0))
         screen.blit(title_text, (title_rect.x, title_rect.y + title_animation_offset))
-        screen.blit(start_text, start_rect)
+        screen.blit(subtitle_text, (subtitle_rect.x, subtitle_rect.y + subtitle_animation_offset))  # Draw the subtitle above the start text
+        screen.blit(start_text, start_rect)  # Draw the start text below the subtitle
+
         pygame.display.update()
         clock.tick(FPS)
 
-def draw_scoreboard(score):
+
+
+def draw_scoreboard(score, npc_interactions):
     font = pygame.font.Font(None, 36)
-    score_text = font.render(f"Score: {score}", True, WHITE)
+    score_text = font.render(f"Screws: {score}", True, WHITE)
+    npc_text = font.render(f"Patients Saved: {npc_interactions}", True, WHITE)
     screen.blit(score_text, (10, 10))
+    screen.blit(npc_text, (10, 40))
 
 # Main game loop
 def main():
     walls = [
-        pygame.Rect(340, 245, 230, 10),
-        pygame.Rect(620, 245, 90, 10),
-        pygame.Rect(680, 245, 7, 95),
-        pygame.Rect(680, 340, 50, 4),
-        pygame.Rect(650, 330, 35, 4),
-        pygame.Rect(565, 330, 30, 4),
-        pygame.Rect(959, 245, 10, 175),
-        pygame.Rect(760, 245, 200, 10),
-        pygame.Rect(810, 340, 5, 80),
-        pygame.Rect(780, 340, 180, 5),
-        pygame.Rect(810, 460, 5, 30),
-        pygame.Rect(959, 458, 10, 34),
+        pygame.Rect(340, 245, 230, 10),  # Wall 1
+        pygame.Rect(620, 245, 90, 10),   # Wall 2
+        pygame.Rect(680, 245, 7, 95), # Wall 3 (Horizontal)
+        pygame.Rect(680, 340, 50, 4), # Wall 4
+        pygame.Rect(650, 330, 35, 4),   # Wall 5
+        pygame.Rect(565, 330, 30, 4), # Wall 6 (Horizontal)
+        pygame.Rect(959, 245, 10, 170),   # Wall 2
+        pygame.Rect(770, 245, 190, 10), # Wall 3 (Horizontal)
+        pygame.Rect(810, 340, 5, 75), # Wall 4
+        pygame.Rect(780, 340, 180, 5), # Wall 6 (Horizontal)
+        pygame.Rect(810, 465, 5, 25), # Wall 4
+        pygame.Rect(959, 463, 10, 29), # Wall 4
         pygame.Rect(540, 483, 420, 10),
-        pygame.Rect(30, 240, 10, 170),
+        pygame.Rect(30, 240, 10, 165),
         pygame.Rect(560, 330, 10, 160),
         pygame.Rect(30, 240, 50, 10),
         pygame.Rect(135, 243, 130, 10),
         pygame.Rect(190, 240, 10, 150),
         pygame.Rect(30, 480, 438, 10),
-        pygame.Rect(30, 460, 10, 30),
+        pygame.Rect(30, 465, 10, 25),
         pygame.Rect(30, 365, 60, 10),
         pygame.Rect(140, 365, 60, 10)
     ]
 
-    global all_sprites, enemies, points, neutral_npcs
     all_sprites = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
     points = pygame.sprite.Group()
@@ -215,7 +254,8 @@ def main():
     all_sprites.add(player)
 
     for _ in range(5):
-        enemy = Enemy()
+        enemy_spawn_x, enemy_spawn_y = find_enemy_spawn_point(enemies, walls)
+        enemy = Enemy(enemy_spawn_x, enemy_spawn_y)
         enemies.add(enemy)
         all_sprites.add(enemy)
 
@@ -229,10 +269,20 @@ def main():
     all_sprites.add(neutral_npc)
 
     score = 0
+    npc_interactions = 0  # Counter for NPC interactions
     game_over = False
+    game_start_time = pygame.time.get_ticks()  # Track game start time
 
     while True:
         screen.fill(BLACK)  # Clear the screen at the start of each frame
+        
+        # Set the wall color to white
+        WALL_COLOR = (255, 255, 255)
+
+        # Draw the walls
+        for wall in walls:
+            pygame.draw.rect(screen, WALL_COLOR, wall)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -249,10 +299,18 @@ def main():
             for neutral_npc in neutral_npcs:
                 neutral_npc.update()
 
-            if pygame.sprite.spritecollideany(player, enemies):
+            # Check if NPC is still alive, if not game over
+            if len(neutral_npcs) == 0:
+                print("The NPC has despawned!")
+                game_over = True
+
+            # Check collision with enemies only if more than 2 seconds have passed
+            elapsed_time = (pygame.time.get_ticks() - game_start_time) / 1000  # Time in seconds
+            if elapsed_time >= 2 and pygame.sprite.spritecollideany(player, enemies):
                 print("Collision with enemy!")
                 game_over = True
 
+            # Collect points
             collected_points = pygame.sprite.spritecollide(player, points, True)
             for _ in collected_points:
                 point = Point()
@@ -265,10 +323,11 @@ def main():
             if score >= 3 and pygame.sprite.spritecollideany(player, neutral_npcs):
                 neutral_npc.respawn(walls)
                 score -= 3
+                npc_interactions += 1  # Increment the NPC interactions counter
 
             screen.blit(background_image, (0, 0))
             all_sprites.draw(screen)
-            draw_scoreboard(score)
+            draw_scoreboard(score, npc_interactions)  # Update the scoreboard display
 
         else:
             display_game_over()
