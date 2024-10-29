@@ -32,6 +32,12 @@ HOVER_COLOR = (200, 200, 200)
 # Define the Player class
 class Player(pygame.sprite.Sprite):
     def __init__(self, spawn_x, spawn_y):
+        """Initialize the Player sprite.
+
+        Args:
+            spawn_x (int): The x-coordinate for the player's starting position.
+            spawn_y (int): The y-coordinate for the player's starting position.
+        """
         super().__init__()
         self.image = pygame.Surface((30, 30))
         self.image.fill(BLUE)
@@ -40,6 +46,12 @@ class Player(pygame.sprite.Sprite):
         self.speed = 7
 
     def update(self, keys, walls):
+        """Update the player's position based on input and collisions with walls.
+
+        Args:
+            keys (list): The current state of all keyboard keys.
+            walls (list): A list of wall rectangles for collision detection.
+        """
         original_rect = self.rect.copy()
         if keys[pygame.K_LEFT]:
             self.rect.x -= self.speed
@@ -59,6 +71,12 @@ class Player(pygame.sprite.Sprite):
 # Define an Enemy class
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, spawn_x, spawn_y):
+        """Initialize the Enemy sprite.
+
+        Args:
+            spawn_x (int): The x-coordinate for the enemy's starting position.
+            spawn_y (int): The y-coordinate for the enemy's starting position.
+        """
         super().__init__()
         self.image = pygame.Surface((30, 30))
         self.image.fill(RED)
@@ -69,6 +87,11 @@ class Enemy(pygame.sprite.Sprite):
         self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]
 
     def update(self, walls):
+        """Update the enemy's position based on its direction and handle wall collisions.
+
+        Args:
+            walls (list): A list of wall rectangles for collision detection.
+        """
         original_rect = self.rect.copy()
         self.rect.x += self.speed * self.direction[0]
         self.rect.y += self.speed * self.direction[1]
@@ -86,6 +109,10 @@ class Enemy(pygame.sprite.Sprite):
 # Define a Point class for collectibles
 class Point(pygame.sprite.Sprite):
     def __init__(self):
+        """Initialize the Point sprite (collectible).
+
+        The point's position is set to a random location on initialization.
+        """
         super().__init__()
         self.image = pygame.Surface((8, 8))
         self.image.fill(YELLOW)
@@ -93,12 +120,18 @@ class Point(pygame.sprite.Sprite):
         self.respawn()
 
     def respawn(self):
+        """Respawn the point at a random location on the screen."""
         self.rect.x = random.randint(0, SCREEN_WIDTH - 8)
         self.rect.y = random.randint(0, SCREEN_HEIGHT - 8)
 
 # Define a NeutralNPC class with a timer
 class NeutralNPC(pygame.sprite.Sprite):
     def __init__(self, walls):
+        """Initialize the NeutralNPC sprite.
+
+        Args:
+            walls (list): A list of wall rectangles for collision detection.
+        """
         super().__init__()
         self.image = pygame.Surface((30, 30))
         self.image.fill(GREEN)
@@ -107,6 +140,11 @@ class NeutralNPC(pygame.sprite.Sprite):
         self.spawn_time = pygame.time.get_ticks()
 
     def respawn(self, walls):
+        """Respawn the NPC at a random location on the screen, ensuring it does not overlap with walls.
+
+        Args:
+            walls (list): A list of wall rectangles for collision detection.
+        """
         while True:
             self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
             self.rect.y = random.randint(0, SCREEN_HEIGHT - self.rect.height)
@@ -115,6 +153,10 @@ class NeutralNPC(pygame.sprite.Sprite):
         self.spawn_time = pygame.time.get_ticks()  # Reset the timer on respawn
 
     def update(self):
+        """Update the NPC's state based on the elapsed time.
+
+        The NPC changes color based on how long it has been alive and despawns after 10 seconds.
+        """
         elapsed_time = (pygame.time.get_ticks() - self.spawn_time) / 1000  # Time in seconds
         if elapsed_time >= 10:
             self.kill()  # Despawn the NPC after 10 seconds
@@ -128,6 +170,15 @@ class NeutralNPC(pygame.sprite.Sprite):
             self.image.fill(GREEN)
 
 def find_spawn_point(enemies, walls):
+    """Find a valid spawn point for the player.
+
+    Args:
+        enemies (Group): A group of enemy sprites.
+        walls (list): A list of wall rectangles for collision detection.
+
+    Returns:
+        tuple: The x and y coordinates of the spawn point.
+    """
     while True:
         spawn_x = random.randint(0, SCREEN_WIDTH - 30)
         spawn_y = random.randint(0, SCREEN_HEIGHT - 30)
@@ -140,6 +191,15 @@ def find_spawn_point(enemies, walls):
             return spawn_x, spawn_y
 
 def find_enemy_spawn_point(enemies, walls):
+    """Find a valid spawn point for an enemy.
+
+    Args:
+        enemies (Group): A group of enemy sprites.
+        walls (list): A list of wall rectangles for collision detection.
+
+    Returns:
+        tuple: The x and y coordinates of the enemy spawn point.
+    """
     while True:
         spawn_x = random.randint(0, SCREEN_WIDTH - 30)
         spawn_y = random.randint(0, SCREEN_HEIGHT - 30)
@@ -152,6 +212,7 @@ def find_enemy_spawn_point(enemies, walls):
             return spawn_x, spawn_y
 
 def display_game_over():
+    """Display the 'GAME OVER' message and wait before exiting the game."""
     font = pygame.font.Font(None, 74)
     text = font.render("GAME OVER", True, RED)
     text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -160,6 +221,7 @@ def display_game_over():
     pygame.time.wait(2000)
 
 def display_title_screen():
+    """Display the title screen with animations and handle user input to start the game."""
     title_font = pygame.font.Font(None, 72)
     start_font = pygame.font.Font(None, 48)
     subtitle_font = pygame.font.Font(None, 36)  # Font for the subtitle
@@ -209,6 +271,7 @@ def display_title_screen():
         clock.tick(FPS)
 
 def draw_scoreboard(score, npc_interactions):
+    """Draws the scoreboard which keeps track of points"""
     font = pygame.font.Font(None, 36)
     score_text = font.render(f"Score: {score}", True, YELLOW)
     interactions_text = font.render(f"NPC Interactions: {npc_interactions}", True, YELLOW)
@@ -216,6 +279,7 @@ def draw_scoreboard(score, npc_interactions):
     screen.blit(interactions_text, (10, 40))
 
 def main():
+    """The main game loop that initializes the game and handles game logic."""
     walls = [
         pygame.Rect(340, 245, 230, 10),  
         pygame.Rect(620, 245, 90, 10),   
